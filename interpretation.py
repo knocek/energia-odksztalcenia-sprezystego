@@ -15,9 +15,13 @@ def interpret_results(results):
     dev_norm = np.sum(epsilon_dev * epsilon_dev)
 
     # Udział energii objętościowej i postaciowej
-    percent_v = phi_v / phi * 100
-    percent_s = phi_s / phi * 100
-
+    if (phi_v != 0 and phi_s != 0):
+        percent_v = phi_v / phi * 100
+        percent_s = phi_s / phi * 100
+    else:
+        percent_v = 0
+        percent_s = 0
+        
     difference = abs(percent_v - percent_s)
 
     if difference <= 5:

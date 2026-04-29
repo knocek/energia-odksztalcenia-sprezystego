@@ -1,3 +1,5 @@
+# from logging import root
+from logging import root
 import tkinter as tk
 from tkinter import messagebox
 import numpy as np
@@ -45,12 +47,36 @@ def run_gui():
     root = tk.Tk()
     root.title("Energia odkształcenia")
 
-    current_fig = None
+    def on_close():
+        plt.close("all")
+        root.quit()
+        root.destroy()
+    
+    root.protocol("WM_DELETE_WINDOW", on_close)
 
+    root.geometry("1200x800")  # startowy rozmiar
+    root.minsize(800, 500)
+
+    root.grid_rowconfigure(0, weight=1)
+    root.grid_columnconfigure(0, weight=1)
+    root.grid_columnconfigure(1, weight=6)
+    left_frame = tk.Frame(root)
+    left_frame.grid_rowconfigure(8, weight=1)
+    left_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+    for col in range(3):
+        left_frame.grid_columnconfigure(col, weight=1, uniform="left_cols")
+    right_frame = tk.Frame(root)
+    right_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+
+    left_frame.grid_columnconfigure(0, weight=1)
+    right_frame.grid_columnconfigure(0, weight=1)
+    right_frame.grid_rowconfigure(0, weight=1)
+
+    current_fig = None
     entries = []
 
     # tensor odkształceń
-    tk.Label(root, text="Tensor odkształceń ε").grid(row=0, column=0, columnspan=3)
+    tk.Label(left_frame, text="Tensor odkształceń ε").grid(row=0, column=0, columnspan=3)
 
     labels = [
     ["εxx", "εxy", "εxz"],
@@ -61,8 +87,8 @@ def run_gui():
     for i in range(3):
         row = []
         for j in range(3):
-            cell = tk.Frame(root)
-            cell.grid(row=i + 1, column=j, padx=8, pady=4)
+            cell = tk.Frame(left_frame)
+            cell.grid(row=i + 1, column=j, padx=8, pady=4, sticky="n")
 
             tk.Label(cell, text=labels[i][j]).pack(side="left")
             e = tk.Entry(cell, width=10, justify="center")
@@ -73,32 +99,33 @@ def run_gui():
 
         entries.append(row)
 
-    tk.Label(root, text="Mnożnik tensora").grid(row=4, column=0, sticky="e")
-    entry_multiplier = tk.Entry(root, width=20)
+    tk.Label(left_frame, text="Mnożnik tensora").grid(row=4, column=0, sticky="e")
+    entry_multiplier = tk.Entry(left_frame, width=20)
     entry_multiplier.grid(row=4, column=1, columnspan=2, pady=3)
     entry_multiplier.insert(0, "1")
 
     #parametry materiałowe
-    tk.Label(root, text="Moduł Younga E [Pa]").grid(row=5, column=0, sticky="e")
-    entry_E = tk.Entry(root, width=20)
+    tk.Label(left_frame, text="Moduł Younga E [Pa]").grid(row=5, column=0, sticky="e")
+    entry_E = tk.Entry(left_frame, width=20)
     entry_E.grid(row=5, column=1, columnspan=2, pady=3)
     entry_E.insert(0, "210e9")
 
-    tk.Label(root, text="Współczynnik Poissona ν").grid(row=6, column=0, sticky="e")
-    entry_nu = tk.Entry(root, width=20)
+    tk.Label(left_frame, text="Współczynnik Poissona ν").grid(row=6, column=0, sticky="e")
+    entry_nu = tk.Entry(left_frame, width=20)
     entry_nu.grid(row=6, column=1, columnspan=2, pady=3)
     entry_nu.insert(0, "0.3")
 
     # pole wyników
-    frame_results = tk.Frame(root)
-    frame_results.grid(row=8, column=0, columnspan=3, padx=5, pady=5)
-
+    frame_results = tk.Frame(left_frame)
+    frame_results.grid(row=8, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+    frame_results.grid_rowconfigure(0, weight=1)
+    frame_results.grid_columnconfigure(0, weight=1)
     scrollbar = tk.Scrollbar(frame_results)
 
     result_box = tk.Text(
         frame_results,
         height=18,
-        width=85,
+        width=62,
         font=("Consolas", 10),
         yscrollcommand=scrollbar.set,
         wrap="word"
@@ -106,12 +133,13 @@ def run_gui():
 
     scrollbar.config(command=result_box.yview)
 
-    result_box.pack(side="left", fill="both", expand=True)
-    scrollbar.pack(side="right", fill="y")
+    result_box.grid(row=0, column=0, sticky="nsew")
+    scrollbar.grid(row=0, column=1, sticky="ns")
 
     # ramka na wykres
-    canvas_frame = tk.Frame(root)
-    canvas_frame.grid(row=8, column=0, columnspan=3, padx=5, pady=5)
+    canvas_frame = tk.Frame(right_frame, width=600, height=400)
+    canvas_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+    canvas_frame.grid_propagate(False)
 
     # funkcja do zapisywania wykresów
     def save_plot():
@@ -191,7 +219,7 @@ def run_gui():
 
             canvas = FigureCanvasTkAgg(current_fig, master=canvas_frame)
             canvas.draw()
-            canvas.get_tk_widget().pack()
+            canvas.get_tk_widget().pack(anchor="center", expand=True)
 
             # plt.close(current_fig)
 
@@ -199,7 +227,7 @@ def run_gui():
             result_box.delete("1.0", tk.END)
             result_box.insert(tk.END, f"Błąd danych wejściowych: {e}")
 
-    buttons_frame = tk.Frame(root)
+    buttons_frame = tk.Frame(left_frame)
     buttons_frame.grid(row=7, column=0, columnspan=3, pady=8)
 
     tk.Button(buttons_frame, text="Oblicz", width=15, command=calculate).pack(
@@ -209,10 +237,6 @@ def run_gui():
     tk.Button(buttons_frame, text="Zapisz wykres", width=15, command=save_plot).pack(
         side="left", padx=10
     )
-
-    frame_results.grid(row=8, column=0, columnspan=3, padx=5, pady=5)
-    canvas_frame.grid(row=9, column=0, columnspan=3, padx=5, pady=5)
-
 
     root.mainloop()
 
